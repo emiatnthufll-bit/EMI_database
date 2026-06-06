@@ -4,6 +4,7 @@ USE emi_db;
 -- Core tables
 CREATE TABLE papers (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  article_code VARCHAR(50),
   title        VARCHAR(512) NOT NULL,
   abstract     MEDIUMTEXT,
   year         INT,
@@ -11,8 +12,13 @@ CREATE TABLE papers (
   doi          VARCHAR(128),
   url          VARCHAR(500),
   authors      TEXT,            -- comma-separated for MVP (normalize later)
+  citation     TEXT,
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+
+ALTER TABLE papers ADD UNIQUE KEY uk_papers_article_code (article_code);
+ALTER TABLE papers ADD INDEX idx_papers_doi (doi);
+ALTER TABLE papers ADD INDEX idx_papers_title_year (title, year);
 
 CREATE TABLE categories (
   id INT PRIMARY KEY AUTO_INCREMENT,
