@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base */
+html, body, #root { height: 100%; }
+body { @apply bg-gray-50 text-gray-900; }
+.dark body { @apply bg-neutral-950 text-neutral-100; }
+
+.container-page { @apply max-w-7xl mx-auto; }
+
+/* Utilities */
+.line-clamp-3{ display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* Card */
+.card{ @apply rounded-2xl border bg-white shadow-sm; }
+.dark .card{ @apply bg-neutral-900 border-neutral-800; }
+
+/* Inputs */
+.input{ @apply w-full rounded-xl border px-4 py-2 bg-white; }
+.dark .input{ @apply bg-neutral-900 border-neutral-800; }
+
+.checkrow{ @apply flex items-center gap-2 text-sm; }

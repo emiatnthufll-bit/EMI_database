@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pymysql
+pydantic
+python-dotenv
+pandas
+openpyxl
+python-multipart
+pytest
+httpx
+requests
