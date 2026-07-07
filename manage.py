@@ -11,25 +11,25 @@ def run_command(command, cwd=None, shell=True):
 
 def start():
     print("Starting services...")
-    run_command("docker-compose up -d --build")
+    run_command("docker compose up -d --build")
     print("\nServices started!")
     print("Frontend: http://localhost:5173")
     print("Backend:  http://localhost:8000")
 
 def stop():
     print("Stopping services...")
-    run_command("docker-compose down")
+    run_command("docker compose down")
     print("Services stopped.")
 
 def load_data():
     print("Loading data...")
     try:
         # Check if services are running
-        subprocess.run("docker-compose ps", shell=True, check=True, stdout=subprocess.DEVNULL)
+        subprocess.run("docker compose ps", shell=True, check=True, stdout=subprocess.DEVNULL)
         
         # Run data loader inside the api container
         # -T disables pseudo-tty allocation
-        run_command("docker-compose exec -T api python app/data_loader.py")
+        run_command("docker compose exec -T api python -c \"from app.data_loader import load_data; print(load_data('/app/data/data.xlsx'))\"")
         print("\nData loading complete!")
     except subprocess.CalledProcessError:
         print("\n[ERROR] Could not load data.")

@@ -276,3 +276,73 @@ def test_metadata_update(app_modules, excel_fixture_path, db_conn, tmp_path):
         cursor.execute("SELECT journal_index_id FROM paper_journal_indices WHERE paper_id = %s", (paper_id,))
         values = {row["journal_index_id"] for row in cursor.fetchall()}
         assert values == {"SCOPUS"}
+
+
+def test_actual_codebook_format_import(app_modules, db_conn, tmp_path):
+    load_data = app_modules["data_loader"].load_data
+
+    columns = [
+        "Paper ID", "Full APA Citation", "Journal Quality", "Research Paper Abstract",
+        "EMI", "CLIL", "TE1", "TE2", "OP3", "EM1", "RS7", "ED4",
+    ]
+    rows = [
+        {
+            "Paper ID": "Abdeljaoued 2023",
+            "Full APA Citation": (
+                "Abdeljaoued, M. (2023). English-medium instruction in Tunisia: "
+                "Perspectives of students. Frontiers in Psychology, 14, Article 1112255. "
+                "https://doi.org/10.3389/fpsyg.2023.1112255"
+            ),
+            "Journal Quality": "SSCI Q1 -- Psychology (Multidisciplinary)",
+            "Research Paper Abstract": "This article gives a Tunisian perspective to EMI.",
+            "EMI": 1,
+            "CLIL": 0,
+            "TE1": 0,
+            "TE2": 1,
+            "OP3": 1,
+            "EM1": 1,
+            "RS7": 1,
+            "ED4": 1,
+        }
+    ]
+
+    path = tmp_path / "actual_codebook.xlsx"
+    df = pd.DataFrame(rows, columns=columns)
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name="Sheet1", index=False, startrow=1)
+        ws = writer.sheets["Sheet1"]
+        ws.cell(row=1, column=5, value="EMI or CLIL?")
+        ws.cell(row=1, column=7, value="Research Topics")
+        ws.cell(row=1, column=9, value="Research Results")
+        ws.cell(row=1, column=10, value="Research Methods")
+        ws.cell(row=1, column=11, value="Research Setting")
+        ws.cell(row=1, column=12, value="Participants")
+
+    result = load_data(str(path))
+
+    assert result["ok"] is True
+    assert result["inserted"] == 1
+    assert result["skipped"] == 0
+    assert result["errors"] == []
+
+    with db_conn.cursor() as cursor:
+        cursor.execute("SELECT id, title, year, doi, url FROM papers WHERE article_code = %s", ("Abdeljaoued 2023",))
+        paper = cursor.fetchone()
+        assert paper["title"] == "English-medium instruction in Tunisia: Perspectives of students"
+        assert paper["year"] == 2023
+        assert paper["doi"] == "10.3389/fpsyg.2023.1112255"
+        assert paper["url"] == "https://doi.org/10.3389/fpsyg.2023.1112255"
+
+        paper_id = paper["id"]
+        cursor.execute("SELECT publication_type_id FROM paper_publication_types WHERE paper_id = %s", (paper_id,))
+        assert {row["publication_type_id"] for row in cursor.fetchall()} == {"EMI"}
+        cursor.execute("SELECT journal_index_id FROM paper_journal_indices WHERE paper_id = %s", (paper_id,))
+        assert {row["journal_index_id"] for row in cursor.fetchall()} == {"TE2"}
+        cursor.execute("SELECT study_nature_id FROM paper_study_natures WHERE paper_id = %s", (paper_id,))
+        assert {row["study_nature_id"] for row in cursor.fetchall()} == {"OP3"}
+        cursor.execute("SELECT research_focus_id FROM paper_research_focuses WHERE paper_id = %s", (paper_id,))
+        assert {row["research_focus_id"] for row in cursor.fetchall()} == {"EM1"}
+        cursor.execute("SELECT research_location_id FROM paper_research_locations WHERE paper_id = %s", (paper_id,))
+        assert {row["research_location_id"] for row in cursor.fetchall()} == {"RS7"}
+        cursor.execute("SELECT education_level_id FROM paper_education_levels WHERE paper_id = %s", (paper_id,))
+        assert {row["education_level_id"] for row in cursor.fetchall()} == {"ED4"}

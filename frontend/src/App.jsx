@@ -291,23 +291,23 @@ export default function App() {
                 </button>
               </div>
               <div className="space-y-1">
-                <CollapsibleSection title="Type of Publication" defaultOpen={true}>
+                <CollapsibleSection title="EMI or CLIL?" defaultOpen={true}>
                   <FacetList items={pubTypes} selectedIds={selectedPubTypes} onToggle={toggle(setSelectedPubTypes)} />
                 </CollapsibleSection>
-                <CollapsibleSection title="Journal Index/Database">
+                <CollapsibleSection title="Research Topics" defaultOpen={true}>
                   <FacetList items={journals} selectedIds={selectedJournals} onToggle={toggle(setSelectedJournals)} />
                 </CollapsibleSection>
-                <CollapsibleSection title="Nature of the Study">
+                <CollapsibleSection title="Research Results">
                   <FacetList items={natures} selectedIds={selectedNatures} onToggle={toggle(setSelectedNatures)} />
                 </CollapsibleSection>
-                <CollapsibleSection title="Level of Education Involved">
-                  <FacetList items={edus} selectedIds={selectedEdus} onToggle={toggle(setSelectedEdus)} />
+                <CollapsibleSection title="Research Methods">
+                  <FacetList items={focuses} selectedIds={selectedFocuses} onToggle={toggle(setSelectedFocuses)} />
                 </CollapsibleSection>
-                <CollapsibleSection title="Location of Research">
+                <CollapsibleSection title="Research Setting">
                   <FacetList items={locations} selectedIds={selectedLocations} onToggle={toggle(setSelectedLocations)} />
                 </CollapsibleSection>
-                <CollapsibleSection title="Research Focus">
-                  <FacetList items={focuses} selectedIds={selectedFocuses} onToggle={toggle(setSelectedFocuses)} />
+                <CollapsibleSection title="Participants">
+                  <FacetList items={edus} selectedIds={selectedEdus} onToggle={toggle(setSelectedEdus)} />
                 </CollapsibleSection>
               </div>
             </div>

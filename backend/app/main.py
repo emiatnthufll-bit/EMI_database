@@ -124,11 +124,12 @@ def facets(q: Optional[str] = None,
         # Let's select id and description (if available) or just id.
         # Our schema: id, description.
         return f"""
-        SELECT t.id, t.description as name, COUNT(p.id) AS cnt
+        SELECT t.id, CONCAT(t.id, ' - ', t.description) as name, COUNT(p.id) AS cnt
         FROM {table} t
         LEFT JOIN {join_table} jt ON jt.{id_col} = t.id
         LEFT JOIN papers p ON p.id = jt.paper_id {join_condition}
         GROUP BY t.id, t.description
+        HAVING cnt > 0
         ORDER BY cnt DESC, t.id
         LIMIT 50
         """
@@ -140,6 +141,7 @@ def facets(q: Optional[str] = None,
     LEFT JOIN paper_categories pc ON pc.category_id = c.id
     LEFT JOIN papers p ON p.id = pc.paper_id {join_condition}
     GROUP BY c.id, c.name
+    HAVING cnt > 0
     ORDER BY cnt DESC, c.name
     LIMIT 50
     """
@@ -150,6 +152,7 @@ def facets(q: Optional[str] = None,
     LEFT JOIN paper_keywords pk ON pk.keyword_id = k.id
     LEFT JOIN papers p ON p.id = pk.paper_id {join_condition}
     GROUP BY k.id, k.name
+    HAVING cnt > 0
     ORDER BY cnt DESC, k.name
     LIMIT 50
     """
