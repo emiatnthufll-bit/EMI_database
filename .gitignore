@@ -8,3 +8,9 @@ __pycache__/
 node_modules/
 dist/
 ~$*.xlsx
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+!backend/data/data.xlsx
+!backend/tests/fixtures/test_emi_articles.xlsx
