@@ -10,6 +10,7 @@ CREATE TABLE papers (
   year         INT,
   venue        VARCHAR(255),
   doi          VARCHAR(128),
+  journal_quality VARCHAR(255),
   url          VARCHAR(500),
   authors      TEXT,            -- comma-separated for MVP (normalize later)
   citation     TEXT,

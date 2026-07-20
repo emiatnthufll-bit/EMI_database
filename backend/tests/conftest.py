@@ -188,6 +188,7 @@ def init_test_db(app_modules):
             cursor.execute(f"USE {TEST_DB_NAME}")
             _ensure_column(cursor, "papers", "article_code", "VARCHAR(50)")
             _ensure_column(cursor, "papers", "citation", "TEXT")
+            _ensure_column(cursor, "papers", "journal_quality", "VARCHAR(255)")
             _ensure_index(cursor, "papers", "uk_papers_article_code", "UNIQUE KEY uk_papers_article_code (article_code)")
             _ensure_index(cursor, "papers", "idx_papers_doi", "INDEX idx_papers_doi (doi)")
             _ensure_index(cursor, "papers", "idx_papers_title_year", "INDEX idx_papers_title_year (title, year)")

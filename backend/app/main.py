@@ -30,6 +30,7 @@ class Paper(BaseModel):
     doi: Optional[str] = None
     url: Optional[str] = None
     authors: Optional[str] = None
+    journal_quality: Optional[str] = None
 
 
 class SearchResponse(BaseModel):
@@ -124,14 +125,14 @@ def facets(q: Optional[str] = None,
         # Let's select id and description (if available) or just id.
         # Our schema: id, description.
         return f"""
-        SELECT t.id, CONCAT(t.id, ' - ', t.description) as name, COUNT(p.id) AS cnt
+        SELECT t.id, t.description as name, COUNT(p.id) AS cnt
         FROM {table} t
         LEFT JOIN {join_table} jt ON jt.{id_col} = t.id
         LEFT JOIN papers p ON p.id = jt.paper_id {join_condition}
         GROUP BY t.id, t.description
         HAVING cnt > 0
-        ORDER BY cnt DESC, t.id
-        LIMIT 50
+        ORDER BY t.id
+        LIMIT 100
         """
 
     # category facet

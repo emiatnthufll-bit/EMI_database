@@ -346,3 +346,88 @@ def test_actual_codebook_format_import(app_modules, db_conn, tmp_path):
         assert {row["research_location_id"] for row in cursor.fetchall()} == {"RS7"}
         cursor.execute("SELECT education_level_id FROM paper_education_levels WHERE paper_id = %s", (paper_id,))
         assert {row["education_level_id"] for row in cursor.fetchall()} == {"ED4"}
+
+
+def test_codebook_v2_format_import(app_modules, db_conn, tmp_path):
+    load_data = app_modules["data_loader"].load_data
+
+    columns = [
+        "Paper ID", "Paper Title", "Authors", "Year", "Publication Details", "DOI", "Journal Quality", "Abstract",
+        "EMI Empirical", "CLIL Empirical", "EMI Non-Empirical", "CLIL Non-Empirical",
+        "Assessment", "CEFR", "Teaching Issues",
+        "Opinion: Administrators", "Outcome: Language Learning",
+        "Classroom Observation", "Surveys / Interviews",
+        "Inner Circle", "Asia EFL",
+        "Pre K-12", "University All Levels",
+    ]
+    rows = [
+        {
+            "Paper ID": "Agudo_Burns 2021",
+            "Paper Title": "What key stakeholders think about CLIL programmes: Commonalities and differences of perspective.",
+            "Authors": "Agudo, J. D. D. M., & Burns, L. V. F.",
+            "Year": 2021,
+            "Publication Details": "Porta Linguarum, (35), 221-237.",
+            "DOI": "https://doi.org/10.30827/portalin.v0i35.15320",
+            "Journal Quality": "SSCI Q1 -- Education & Educational Research / SSCI Q1 -- Linguistics",
+            "Abstract": "This study discusses CLIL programmes from stakeholder perspectives.",
+            "EMI Empirical": 0,
+            "CLIL Empirical": 1,
+            "EMI Non-Empirical": 0,
+            "CLIL Non-Empirical": 0,
+            "Assessment": 1,
+            "CEFR": 0,
+            "Teaching Issues": 1,
+            "Opinion: Administrators": 0,
+            "Outcome: Language Learning": 1,
+            "Classroom Observation": 1,
+            "Surveys / Interviews": 0,
+            "Inner Circle": 0,
+            "Asia EFL": 0,
+            "Pre K-12": 0,
+            "University All Levels": 1,
+        }
+    ]
+
+    path = tmp_path / "codebook_v2.xlsx"
+    df = pd.DataFrame(rows, columns=columns)
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name="Sheet1", index=False, startrow=1)
+        ws = writer.sheets["Sheet1"]
+        ws.cell(row=1, column=9, value="Paper Type")
+        ws.cell(row=1, column=13, value="Research Topics")
+        ws.cell(row=1, column=16, value="Research Results")
+        ws.cell(row=1, column=18, value="Research Methods")
+        ws.cell(row=1, column=20, value="Research Setting")
+        ws.cell(row=1, column=22, value="Participants")
+
+    result = load_data(str(path))
+
+    assert result["ok"] is True
+    assert result["inserted"] == 1
+    assert result["skipped"] == 0
+    assert result["errors"] == []
+
+    with db_conn.cursor() as cursor:
+        cursor.execute(
+            "SELECT id, title, year, venue, doi, url, journal_quality FROM papers WHERE article_code = %s",
+            ("Agudo_Burns 2021",),
+        )
+        paper = cursor.fetchone()
+        assert paper["title"] == "What key stakeholders think about CLIL programmes: Commonalities and differences of perspective."
+        assert paper["year"] == 2021
+        assert paper["venue"] == "Porta Linguarum, (35), 221-237."
+        assert paper["doi"] == "10.30827/portalin.v0i35.15320"
+        assert paper["url"] == "https://doi.org/10.30827/portalin.v0i35.15320"
+        assert paper["journal_quality"] == "SSCI Q1 -- Education & Educational Research / SSCI Q1 -- Linguistics"
+
+        paper_id = paper["id"]
+        cursor.execute("SELECT publication_type_id FROM paper_publication_types WHERE paper_id = %s", (paper_id,))
+        assert {row["publication_type_id"] for row in cursor.fetchall()} == {"PT02"}
+        cursor.execute("SELECT journal_index_id FROM paper_journal_indices WHERE paper_id = %s", (paper_id,))
+        assert {row["journal_index_id"] for row in cursor.fetchall()} == {"RT01", "RT16"}
+        cursor.execute("SELECT study_nature_id FROM paper_study_natures WHERE paper_id = %s", (paper_id,))
+        assert {row["study_nature_id"] for row in cursor.fetchall()} == {"RR13"}
+        cursor.execute("SELECT research_focus_id FROM paper_research_focuses WHERE paper_id = %s", (paper_id,))
+        assert {row["research_focus_id"] for row in cursor.fetchall()} == {"RM01"}
+        cursor.execute("SELECT education_level_id FROM paper_education_levels WHERE paper_id = %s", (paper_id,))
+        assert {row["education_level_id"] for row in cursor.fetchall()} == {"ED04"}

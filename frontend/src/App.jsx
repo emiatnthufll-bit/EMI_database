@@ -8,7 +8,7 @@ function Chip({ label, onRemove }) {
     <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm">
       {label}
       {onRemove && (
-        <button onClick={onRemove} className="text-gray-500 hover:text-black">×</button>
+        <button onClick={onRemove} className="text-gray-500 hover:text-black">x</button>
       )}
     </span>
   )
@@ -23,9 +23,7 @@ function CollapsibleSection({ title, children, defaultOpen = false }) {
         className="flex items-center justify-between w-full py-2 px-1 hover:bg-gray-50 text-left font-medium text-gray-700"
       >
         <span>{title}</span>
-        <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-          ▼
-        </span>
+        <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>v</span>
       </button>
       {isOpen && <div className="pl-2 pb-2">{children}</div>}
     </div>
@@ -35,19 +33,28 @@ function CollapsibleSection({ title, children, defaultOpen = false }) {
 function FacetList({ items, selectedIds, onToggle }) {
   if (!items || items.length === 0) return <div className="text-sm text-gray-400 py-1">No items</div>
   return (
-    <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto pr-1">
+    <div className="grid grid-cols-1 gap-1 max-h-64 overflow-y-auto pr-1">
       {items.map((x) => (
-        <label key={x.id} className="flex items-center gap-2 text-sm py-0.5 cursor-pointer hover:bg-gray-50 rounded">
+        <label key={x.id} className="flex items-start gap-2 text-sm py-1 cursor-pointer hover:bg-gray-50 rounded">
           <input
             type="checkbox"
             checked={selectedIds.includes(x.id)}
             onChange={() => onToggle(x.id)}
-            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+            className="mt-0.5 shrink-0 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
           />
-          <span className="flex-1 truncate" title={x.name}>{x.name}</span>
-          <span className="text-gray-400 text-xs">{x.cnt ?? ''}</span>
+          <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug" title={x.name}>{x.name}</span>
+          <span className="shrink-0 text-gray-400 text-xs">{x.cnt ?? ''}</span>
         </label>
       ))}
+    </div>
+  )
+}
+
+function DetailField({ label, children }) {
+  return (
+    <div className="text-sm text-gray-700">
+      <div className="font-semibold text-gray-900">{label}</div>
+      <div className="mt-0.5 leading-relaxed">{children || 'N/A'}</div>
     </div>
   )
 }
@@ -113,15 +120,14 @@ export default function App() {
     const p = new URLSearchParams()
     if (q) p.set('q', q)
     if (searchField !== 'all') p.set('field', searchField)
-    if (selectedCats.length) selectedCats.forEach(id => p.append('category_ids', id))
-    if (selectedKws.length) selectedKws.forEach(id => p.append('keyword_ids', id))
-    if (selectedPubTypes.length) selectedPubTypes.forEach(id => p.append('pub_type_ids', id))
-    if (selectedJournals.length) selectedJournals.forEach(id => p.append('journal_ids', id))
-    if (selectedNatures.length) selectedNatures.forEach(id => p.append('nature_ids', id))
-    if (selectedEdus.length) selectedEdus.forEach(id => p.append('edu_ids', id))
-    if (selectedLocations.length) selectedLocations.forEach(id => p.append('location_ids', id))
-    if (selectedFocuses.length) selectedFocuses.forEach(id => p.append('focus_ids', id))
-
+    selectedCats.forEach(id => p.append('category_ids', id))
+    selectedKws.forEach(id => p.append('keyword_ids', id))
+    selectedPubTypes.forEach(id => p.append('pub_type_ids', id))
+    selectedJournals.forEach(id => p.append('journal_ids', id))
+    selectedNatures.forEach(id => p.append('nature_ids', id))
+    selectedEdus.forEach(id => p.append('edu_ids', id))
+    selectedLocations.forEach(id => p.append('location_ids', id))
+    selectedFocuses.forEach(id => p.append('focus_ids', id))
     if (yearFrom) p.set('year_from', yearFrom)
     if (yearTo) p.set('year_to', yearTo)
     p.set('page', page)
@@ -130,7 +136,6 @@ export default function App() {
     return p.toString()
   }, [q, searchField, selectedCats, selectedKws, selectedPubTypes, selectedJournals, selectedNatures, selectedEdus, selectedLocations, selectedFocuses, yearFrom, yearTo, page, pageSize, sort])
 
-  // fetch facets under current filters (dynamic counts)
   useEffect(() => {
     const pf = new URLSearchParams()
     if (q) pf.set('q', q)
@@ -142,7 +147,6 @@ export default function App() {
     selectedEdus.forEach(id => pf.append('edu_ids', id))
     selectedLocations.forEach(id => pf.append('location_ids', id))
     selectedFocuses.forEach(id => pf.append('focus_ids', id))
-
     if (yearFrom) pf.set('year_from', yearFrom)
     if (yearTo) pf.set('year_to', yearTo)
 
@@ -161,27 +165,16 @@ export default function App() {
       .catch(() => { })
   }, [q, selectedCats, selectedKws, selectedPubTypes, selectedJournals, selectedNatures, selectedEdus, selectedLocations, selectedFocuses, yearFrom, yearTo])
 
-  // fetch results
   useEffect(() => {
     fetch(`${API_URL}/search?${params}`)
       .then(r => r.json())
       .then(data => {
-        setItems(data.items)
-        setTotal(data.total)
+        setItems(data.items || [])
+        setTotal(data.total || 0)
       })
       .catch(() => { })
   }, [params])
 
-  function toggleCat(id) {
-    setPage(1)
-    setSelectedCats((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-  function toggleKw(id) {
-    setPage(1)
-    setSelectedKws((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-
-  // Generic toggle helper
   const toggle = (setter) => (id) => {
     setPage(1)
     setter((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
@@ -191,31 +184,12 @@ export default function App() {
     if (!text || !terms.length) return text
     const safe = terms.map(t => t.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'))
     const regex = new RegExp(`(${safe.join('|')})`, 'ig')
-    return text.split(regex).map((part, i) => (
+    return String(text).split(regex).map((part, i) => (
       regex.test(part) ? <mark key={i}>{part}</mark> : <span key={i}>{part}</span>
     ))
   }
 
-  const qTerms = useMemo(() => (q ? q.split(/\s+/).filter(Boolean) : []), [q])
-
-  // 收集所有需要高亮的詞彙：搜尋關鍵字 + 已選擇的 categories 和 keywords
-  const highlightTerms = useMemo(() => {
-    const terms = [...qTerms]
-
-    // 加入已選擇的 categories 名稱
-    selectedCats.forEach(catId => {
-      const cat = categories.find(c => c.id === catId)
-      if (cat && cat.name) terms.push(cat.name)
-    })
-
-    // 加入已選擇的 keywords 名稱
-    selectedKws.forEach(kwId => {
-      const kw = keywords.find(k => k.id === kwId)
-      if (kw && kw.name) terms.push(kw.name)
-    })
-
-    return terms
-  }, [qTerms, selectedCats, selectedKws, categories, keywords])
+  const highlightTerms = useMemo(() => (q ? q.split(/\s+/).filter(Boolean) : []), [q])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -237,12 +211,12 @@ export default function App() {
           <input
             value={inputVal}
             onChange={e => setInputVal(e.target.value)}
-            onKeyPress={e => { if (e.key === 'Enter') { setQ(inputVal); setPage(1); } }}
+            onKeyDown={e => { if (e.key === 'Enter') { setQ(inputVal); setPage(1) } }}
             className="flex-1 rounded-xl border px-4 py-2"
             placeholder="Search title/abstract/authors"
           />
           <button
-            onClick={() => { setQ(inputVal); setPage(1); }}
+            onClick={() => { setQ(inputVal); setPage(1) }}
             className="px-6 py-2 font-medium rounded-xl border-2 transition-colors"
             style={{ backgroundColor: 'rgb(127, 16, 132)', color: 'white', borderColor: 'rgb(127, 16, 132)' }}
             onMouseEnter={e => e.target.style.backgroundColor = 'rgb(107, 13, 112)'}
@@ -251,8 +225,8 @@ export default function App() {
             Search
           </button>
           <select value={sort} onChange={e => setSort(e.target.value)} className="border rounded-xl px-3 py-2 bg-white font-medium" style={{ color: 'rgb(127, 16, 132)' }}>
-            <option value="year_desc">Year ↓</option>
-            <option value="year_asc">Year ↑</option>
+            <option value="year_desc">Year desc</option>
+            <option value="year_asc">Year asc</option>
           </select>
           <a
             href="/admin"
@@ -264,16 +238,15 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-12 gap-6">
-        <aside className="col-span-3">
+      <main className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-1 gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <aside className="min-w-0">
           <div className="rounded-2xl bg-white p-4 shadow-sm border overflow-y-auto max-h-[calc(100vh-150px)]">
             <h2 className="font-semibold mb-3">Filters</h2>
             <div className="mb-4 grid grid-cols-2 gap-2">
-              <input type="number" value={yearFrom} onChange={e => { setYearFrom(e.target.value); setPage(1); }} placeholder="Year from" className="border rounded-xl px-3 py-2" />
-              <input type="number" value={yearTo} onChange={e => { setYearTo(e.target.value); setPage(1); }} placeholder="Year to" className="border rounded-xl px-3 py-2" />
+              <input type="number" value={yearFrom} onChange={e => { setYearFrom(e.target.value); setPage(1) }} placeholder="Year from" className="border rounded-xl px-3 py-2" />
+              <input type="number" value={yearTo} onChange={e => { setYearTo(e.target.value); setPage(1) }} placeholder="Year to" className="border rounded-xl px-3 py-2" />
             </div>
 
-            {/* Area 1: Categories (Metadata) */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2 border-b-2 border-purple-100 pb-1">
                 <h3 className="font-bold text-lg text-purple-800">Categories</h3>
@@ -291,7 +264,7 @@ export default function App() {
                 </button>
               </div>
               <div className="space-y-1">
-                <CollapsibleSection title="EMI or CLIL?" defaultOpen={true}>
+                <CollapsibleSection title="Paper Type" defaultOpen={true}>
                   <FacetList items={pubTypes} selectedIds={selectedPubTypes} onToggle={toggle(setSelectedPubTypes)} />
                 </CollapsibleSection>
                 <CollapsibleSection title="Research Topics" defaultOpen={true}>
@@ -311,22 +284,20 @@ export default function App() {
                 </CollapsibleSection>
               </div>
             </div>
-
           </div>
         </aside>
 
-        <section className="col-span-9">
+        <section className="min-w-0">
           <div className="mb-3 flex flex-wrap gap-2">
             {selectedCats.length > 0 && <Chip label={`Topics: ${selectedCats.length}`} onRemove={() => setSelectedCats([])} />}
             {selectedKws.length > 0 && <Chip label={`Keywords: ${selectedKws.length}`} onRemove={() => setSelectedKws([])} />}
-            {selectedPubTypes.length > 0 && <Chip label={`PubType: ${selectedPubTypes.length}`} onRemove={() => setSelectedPubTypes([])} />}
-            {selectedJournals.length > 0 && <Chip label={`Journal: ${selectedJournals.length}`} onRemove={() => setSelectedJournals([])} />}
-            {selectedNatures.length > 0 && <Chip label={`Nature: ${selectedNatures.length}`} onRemove={() => setSelectedNatures([])} />}
-            {selectedEdus.length > 0 && <Chip label={`Edu: ${selectedEdus.length}`} onRemove={() => setSelectedEdus([])} />}
-            {selectedLocations.length > 0 && <Chip label={`Loc: ${selectedLocations.length}`} onRemove={() => setSelectedLocations([])} />}
-            {selectedFocuses.length > 0 && <Chip label={`Focus: ${selectedFocuses.length}`} onRemove={() => setSelectedFocuses([])} />}
-
-            {(yearFrom || yearTo) && <Chip label={`Year: ${yearFrom || '…'}–${yearTo || '…'}`} onRemove={() => { setYearFrom(''); setYearTo('') }} />}
+            {selectedPubTypes.length > 0 && <Chip label={`Paper Type: ${selectedPubTypes.length}`} onRemove={() => setSelectedPubTypes([])} />}
+            {selectedJournals.length > 0 && <Chip label={`Research Topics: ${selectedJournals.length}`} onRemove={() => setSelectedJournals([])} />}
+            {selectedNatures.length > 0 && <Chip label={`Research Results: ${selectedNatures.length}`} onRemove={() => setSelectedNatures([])} />}
+            {selectedEdus.length > 0 && <Chip label={`Participants: ${selectedEdus.length}`} onRemove={() => setSelectedEdus([])} />}
+            {selectedLocations.length > 0 && <Chip label={`Research Setting: ${selectedLocations.length}`} onRemove={() => setSelectedLocations([])} />}
+            {selectedFocuses.length > 0 && <Chip label={`Research Methods: ${selectedFocuses.length}`} onRemove={() => setSelectedFocuses([])} />}
+            {(yearFrom || yearTo) && <Chip label={`Year: ${yearFrom || 'any'}-${yearTo || 'any'}`} onRemove={() => { setYearFrom(''); setYearTo('') }} />}
           </div>
 
           <div className="rounded-2xl bg-white p-4 shadow-sm border">
@@ -334,62 +305,37 @@ export default function App() {
               <div className="text-sm text-gray-600">{total} results</div>
               <div className="flex items-center gap-2">
                 <span className="text-sm">Page size</span>
-                <select value={pageSize} onChange={e => { setPageSize(+e.target.value); setPage(1); }} className="border rounded-lg px-2 py-1">
+                <select value={pageSize} onChange={e => { setPageSize(+e.target.value); setPage(1) }} className="border rounded-lg px-2 py-1">
                   {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
             </div>
 
             <ul className="space-y-4">
-              {items.map(it => {
-                return (
-                  <li
-                    key={it.id}
-                    className="border rounded-xl p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-blue-600 hover:text-blue-800">
-                          {it.url ? <a className="hover:underline" href={it.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{highlight(it.title, highlightTerms)}</a> : highlight(it.title, highlightTerms)}
-                        </h3>
-
-                        {/* Authors */}
-                        <div className="text-sm text-gray-600 mt-2">
-                          <span className="font-medium">作者：</span>
-                          {highlight(
-                            (it.authors || '').split(',').slice(0, 6).join(', ') +
-                            ((it.authors || '').split(',').length > 6 ? ' et al.' : ''),
-                            highlightTerms
-                          )}
-                        </div>
-
-                        {/* Venue and Year */}
-                        <div className="text-sm text-gray-600 mt-1">
-                          <span className="font-medium">期刊：</span>
-                          {it.venue || 'N/A'}
-                          <span className="mx-2">·</span>
-                          <span className="font-medium">年份：</span>
-                          {it.year || 'N/A'}
-                          {it.doi && (
-                            <>
-                              <span className="mx-2">·</span>
-                              <a className="text-blue-600 hover:underline" href={`https://doi.org/${it.doi}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>DOI</a>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Abstract - Always Visible */}
-                        {it.abstract && (
-                          <div className="mt-3">
-                            <div className="text-sm font-medium text-gray-700 mb-1">摘要：</div>
-                            <p className="text-sm text-gray-800 leading-relaxed">{highlight(it.abstract, highlightTerms)}</p>
-                          </div>
-                        )}
-                      </div>
+              {items.map(it => (
+                <li key={it.id} className="border rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="space-y-3">
+                    <DetailField label="Paper Title">
+                      <span className="font-semibold text-lg text-blue-600 hover:text-blue-800">
+                        {it.url ? (
+                          <a className="hover:underline" href={it.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                            {highlight(it.title, highlightTerms)}
+                          </a>
+                        ) : highlight(it.title, highlightTerms)}
+                      </span>
+                    </DetailField>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px]">
+                      <DetailField label="Authors">{highlight(it.authors || 'N/A', highlightTerms)}</DetailField>
+                      <DetailField label="Year">{it.year || 'N/A'}</DetailField>
                     </div>
-                  </li>
-                )
-              })}
+                    <DetailField label="Publication Details">{it.venue || 'N/A'}</DetailField>
+                    <DetailField label="Journal Quality">{it.journal_quality || 'N/A'}</DetailField>
+                    <DetailField label="Abstract">
+                      <p className="text-gray-800 leading-relaxed">{highlight(it.abstract || 'N/A', highlightTerms)}</p>
+                    </DetailField>
+                  </div>
+                </li>
+              ))}
             </ul>
 
             <div className="mt-6 flex items-center justify-between">
